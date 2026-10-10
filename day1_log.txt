@@ -1,0 +1,50 @@
+2026-10-10 16:25:50 | Reading: {'temperature': 82, 'pressure': 39, 'vibration': 1.25} | Rule: HIGH_TEMP | Action: STOP_MACHINE
+2026-10-10 16:25:51 | Reading: {'temperature': 54, 'pressure': 83, 'vibration': 4.17} | Rule: HIGH_PRESSURE | Action: REDUCE_PRESSURE
+2026-10-10 16:25:51 | Reading: {'temperature': 53, 'pressure': 40, 'vibration': 4.02} | Rule: HIGH_PRESSURE | Action: REDUCE_PRESSURE
+2026-10-10 16:25:51 | Reading: {'temperature': 57, 'pressure': 36, 'vibration': 3.71} | Rule: HIGH_PRESSURE | Action: REDUCE_PRESSURE
+2026-10-10 16:25:51 | Reading: {'temperature': 61, 'pressure': 100, 'vibration': 3.39} | Rule: HIGH_PRESSURE | Action: REDUCE_PRESSURE
+2026-10-10 16:25:51 | Reading: {'temperature': 67, 'pressure': 57, 'vibration': 1.78} | Rule: HIGH_PRESSURE | Action: REDUCE_PRESSURE
+2026-10-10 16:25:52 | Reading: {'temperature': 90, 'pressure': 85, 'vibration': 2.94} | Rule: HIGH_TEMP | Action: STOP_MACHINE
+2026-10-10 16:25:52 | Reading: {'temperature': 64, 'pressure': 66, 'vibration': 0.45} | Rule: HIGH_PRESSURE | Action: REDUCE_PRESSURE
+2026-10-10 16:25:52 | Reading: {'temperature': 80, 'pressure': 96, 'vibration': 0.63} | Rule: HIGH_PRESSURE | Action: REDUCE_PRESSURE
+2026-10-10 16:25:52 | Reading: {'temperature': 94, 'pressure': 29, 'vibration': 1.87} | Rule: HIGH_TEMP | Action: STOP_MACHINE
+2026-10-10 16:29:25 | Reading: {'temperature': 59, 'pressure': 73, 'vibration': 3.21, 'current': 15.56} | Rule: HIGH_PRESSURE | Action: REDUCE_PRESSURE
+2026-10-10 16:29:25 | Reading: {'temperature': 57, 'pressure': 65, 'vibration': 3.59, 'current': 10.25} | Rule: HIGH_PRESSURE | Action: REDUCE_PRESSURE
+2026-10-10 16:29:25 | Reading: {'temperature': 91, 'pressure': 84, 'vibration': 1.12, 'current': 13.15} | Rule: HIGH_TEMP | Action: STOP_MACHINE
+2026-10-10 16:29:25 | Reading: {'temperature': 58, 'pressure': 35, 'vibration': 3.02, 'current': 11.94} | Rule: NO_RULE_FIRED | Action: CONTINUE_NORMAL
+2026-10-10 16:29:25 | Reading: {'temperature': 80, 'pressure': 64, 'vibration': 3.28, 'current': 15.28} | Rule: HIGH_PRESSURE | Action: REDUCE_PRESSURE
+2026-10-10 16:29:26 | Reading: {'temperature': 69, 'pressure': 52, 'vibration': 3.85, 'current': 9.04} | Rule: HIGH_PRESSURE | Action: REDUCE_PRESSURE
+2026-10-10 16:29:26 | Reading: {'temperature': 66, 'pressure': 81, 'vibration': 3.23, 'current': 19.94} | Rule: HIGH_PRESSURE | Action: REDUCE_PRESSURE
+2026-10-10 16:29:26 | Reading: {'temperature': 65, 'pressure': 87, 'vibration': 1.42, 'current': 6.22} | Rule: HIGH_PRESSURE | Action: REDUCE_PRESSURE
+2026-10-10 16:29:26 | Reading: {'temperature': 70, 'pressure': 49, 'vibration': 0.53, 'current': 5.77} | Rule: HIGH_PRESSURE | Action: REDUCE_PRESSURE
+2026-10-10 16:29:26 | Reading: {'temperature': 78, 'pressure': 23, 'vibration': 2.21, 'current': 7.73} | Rule: LOW_PRESSURE | Action: CHECK_MACHINE
+2026-10-10 16:31:01 | Reading: {'temperature': 91, 'pressure': 77, 'vibration': 4.79, 'current': 10.1} | Rule: CRITICAL_TEMP | Action: STOP_MACHINE
+2026-10-10 16:31:01 | Reading: {'temperature': 67, 'pressure': 23, 'vibration': 1.81, 'current': 10.2} | Rule: LOW_PRESSURE | Action: CHECK_MACHINE
+2026-10-10 16:31:01 | Reading: {'temperature': 82, 'pressure': 77, 'vibration': 1.68, 'current': 16.69} | Rule: HIGH_TEMP | Action: STOP_MACHINE
+2026-10-10 16:31:01 | Reading: {'temperature': 57, 'pressure': 29, 'vibration': 4.41, 'current': 12.67} | Rule: HIGH_VIBRATION | Action: CHECK_MACHINE
+2026-10-10 16:31:01 | Reading: {'temperature': 77, 'pressure': 70, 'vibration': 1.57, 'current': 17.03} | Rule: HIGH_PRESSURE | Action: REDUCE_PRESSURE
+2026-10-10 16:31:02 | Reading: {'temperature': 53, 'pressure': 45, 'vibration': 2.95, 'current': 6.75} | Rule: HIGH_PRESSURE | Action: REDUCE_PRESSURE
+2026-10-10 16:31:02 | Reading: {'temperature': 92, 'pressure': 92, 'vibration': 2.95, 'current': 10.9} | Rule: CRITICAL_TEMP | Action: STOP_MACHINE
+2026-10-10 16:31:02 | Reading: {'temperature': 64, 'pressure': 32, 'vibration': 1.8, 'current': 15.57} | Rule: NO_RULE_FIRED | Action: CONTINUE_NORMAL
+2026-10-10 16:31:02 | Reading: {'temperature': 79, 'pressure': 92, 'vibration': 0.34, 'current': 10.72} | Rule: HIGH_PRESSURE | Action: REDUCE_PRESSURE
+2026-10-10 16:31:02 | Reading: {'temperature': 78, 'pressure': 29, 'vibration': 2.91, 'current': 13.88} | Rule: NO_RULE_FIRED | Action: CONTINUE_NORMAL
+2026-10-10 16:37:04 | Reading: {'temperature': 78, 'pressure': 51, 'vibration': 1.12, 'current': 9.44} | Rule: HIGH_PRESSURE | Action: REDUCE_PRESSURE
+2026-10-10 16:37:04 | Reading: {'temperature': 59, 'pressure': 48, 'vibration': 3.65, 'current': 7.19} | Rule: HIGH_PRESSURE | Action: REDUCE_PRESSURE
+2026-10-10 16:37:05 | Reading: {'temperature': 63, 'pressure': 51, 'vibration': 0.76, 'current': 7.06} | Rule: HIGH_PRESSURE | Action: REDUCE_PRESSURE
+2026-10-10 16:37:05 | Reading: {'temperature': 78, 'pressure': 71, 'vibration': 2.15, 'current': 8.28} | Rule: HIGH_PRESSURE | Action: REDUCE_PRESSURE
+2026-10-10 16:37:05 | Reading: {'temperature': 52, 'pressure': 41, 'vibration': 0.2, 'current': 17.86} | Rule: HIGH_PRESSURE | Action: REDUCE_PRESSURE
+2026-10-10 16:37:05 | Reading: {'temperature': 56, 'pressure': 68, 'vibration': 4.6, 'current': 10.6} | Rule: HIGH_PRESSURE | Action: REDUCE_PRESSURE
+2026-10-10 16:37:05 | Reading: {'temperature': 59, 'pressure': 46, 'vibration': 3.57, 'current': 10.02} | Rule: HIGH_PRESSURE | Action: REDUCE_PRESSURE
+2026-10-10 16:37:06 | Reading: {'temperature': 74, 'pressure': 31, 'vibration': 3.35, 'current': 8.48} | Rule: NO_RULE_FIRED | Action: CONTINUE_NORMAL
+2026-10-10 16:37:06 | Reading: {'temperature': 84, 'pressure': 32, 'vibration': 2.38, 'current': 11.07} | Rule: HIGH_TEMP | Action: STOP_MACHINE
+2026-10-10 16:37:06 | Reading: {'temperature': 81, 'pressure': 90, 'vibration': 2.24, 'current': 6.28} | Rule: HIGH_TEMP | Action: STOP_MACHINE
+2026-10-10 16:38:08 | Reading: {'temperature': 57, 'pressure': 21, 'vibration': 4.48, 'current': 11.06} | Rule: HIGH_VIBRATION | Action: CHECK_MACHINE
+2026-10-10 16:38:08 | Reading: {'temperature': 82, 'pressure': 35, 'vibration': 3.55, 'current': 11.29} | Rule: HIGH_TEMP | Action: STOP_MACHINE
+2026-10-10 16:38:08 | Reading: {'temperature': 70, 'pressure': 31, 'vibration': 1.23, 'current': 12.25} | Rule: NO_RULE_FIRED | Action: CONTINUE_NORMAL
+2026-10-10 16:38:08 | Reading: {'temperature': 57, 'pressure': 32, 'vibration': 3.33, 'current': 15.02} | Rule: NO_RULE_FIRED | Action: CONTINUE_NORMAL
+2026-10-10 16:38:09 | Reading: {'temperature': 62, 'pressure': 82, 'vibration': 3.12, 'current': 9.81} | Rule: HIGH_PRESSURE | Action: REDUCE_PRESSURE
+2026-10-10 16:38:09 | Reading: {'temperature': 64, 'pressure': 53, 'vibration': 2.92, 'current': 14.7} | Rule: HIGH_PRESSURE | Action: REDUCE_PRESSURE
+2026-10-10 16:38:09 | Reading: {'temperature': 66, 'pressure': 65, 'vibration': 3.33, 'current': 13.82} | Rule: HIGH_PRESSURE | Action: REDUCE_PRESSURE
+2026-10-10 16:38:09 | Reading: {'temperature': 57, 'pressure': 98, 'vibration': 1.42, 'current': 13.14} | Rule: HIGH_PRESSURE | Action: REDUCE_PRESSURE
+2026-10-10 16:38:09 | Reading: {'temperature': 62, 'pressure': 49, 'vibration': 4.12, 'current': 6.56} | Rule: HIGH_PRESSURE | Action: REDUCE_PRESSURE
+2026-10-10 16:38:10 | Reading: {'temperature': 53, 'pressure': 64, 'vibration': 3.94, 'current': 16.59} | Rule: HIGH_PRESSURE | Action: REDUCE_PRESSURE
