@@ -24,9 +24,9 @@ def generate_sensor_data():
     """Return a dict with at least 'temperature', 'pressure', 'vibration'."""
     # TODO: fill in realistic random values, e.g. temperature 50-95 (deg C)
     return {
-        "temperature": None,   # TODO
-        "pressure": None,      # TODO
-        "vibration": None,     # TODO
+        "temperature": random.randint(50,95),   # TODO
+        "pressure": random.randint(20,100),      # TODO
+        "vibration": round(random.uniform(0.1, 5.0), 2),     # TODO
     }
     # STRETCH GOAL (after the 8 steps below all work): real sensors aren't
     # perfectly clean. Try making one field randomly return None (a
@@ -40,8 +40,24 @@ def generate_sensor_data():
 # STEP 8 — Add one priority rule (lower "priority" number checked first)
 # ---------------------------------------------------------------------------
 RULES = [
-    # TODO: add rule dicts like:
-    # {"name": "HIGH_TEMP", "priority": 1, "condition": lambda r: r["temperature"] > 80, "action": "STOP_MACHINE"},
+    {
+        "name": "HIGH_TEMP",
+        "priority": 1,
+        "condition": lambda r: r["temperature"] > 80,
+        "action": "STOP_MACHINE"
+    },
+    {
+        "name": "HIGH_PRESSURE",
+        "priority": 2,
+        "condition": lambda r: r["pressure"] > 35,
+        "action": "REDUCE_PRESSURE"
+    },
+    {
+        "name": "HIGH_VIBRATION",
+        "priority": 3,
+        "condition": lambda r: r["vibration"] > 4.0,
+        "action": "CHECK_MACHINE"
+    }
 ]
 
 
@@ -49,12 +65,14 @@ RULES = [
 # STEP 3 — Detect machine state from the rules
 # ---------------------------------------------------------------------------
 def evaluate_rules(reading, rules):
-    """Return (rule_name, action) for the first matching rule, checked in
-    priority order (lowest number first). If nothing matches, return
-    ("NO_RULE_FIRED", "CONTINUE_NORMAL")."""
-    # TODO: sort `rules` by priority, then check each rule's condition(reading)
-    return "NO_RULE_FIRED", "CONTINUE_NORMAL"
+    """Evaluate rules in priority order and return the first matching rule."""
+    sorted_rules = sorted(rules, key=lambda rule: rule["priority"])
 
+    for rule in sorted_rules:
+        if rule["condition"](reading):
+            return rule["name"], rule["action"]
+
+    return "NO_RULE_FIRED", "CONTINUE_NORMAL"
 
 # ---------------------------------------------------------------------------
 # STEP 4 — Trigger an action when a rule fires
