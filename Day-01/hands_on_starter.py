@@ -10,12 +10,13 @@ step to see your progress:
 
 Need the answer? See hands_on_solution.py — but try it yourself first.
 """
-
+import csv
+import os
 import random
 import time
 
 LOG_FILE = "day1_log.txt"
-
+CSV_FILE = "Day-02/data/rule_engine_data.csv"
 
 # ---------------------------------------------------------------------------
 # STEP 1 — Generate simulated sensor data
@@ -28,7 +29,7 @@ def generate_sensor_data():
         "pressure": random.randint(20,100),      # TODO
         "vibration": round(random.uniform(0.1, 5.0), 2),     # TODO
         "current": round(random.uniform(5, 20), 2),
-        
+        "rpm": random.randint(1180, 1600),
     }
     # STRETCH GOAL (after the 8 steps below all work): real sensors aren't
     # perfectly clean. Try making one field randomly return None (a
@@ -116,6 +117,35 @@ def log_decision(reading, rule_name, action):
             f"Rule: {rule_name} | Action: {action}\n"
         )
 
+def log_csv(reading, rule_name):
+    os.makedirs(os.path.dirname(CSV_FILE), exist_ok=True)
+
+    file_exists = os.path.exists(CSV_FILE)
+
+    if rule_name in ("CRITICAL_TEMP", "HIGH_TEMP", "HIGH_CURRENT"):
+        state = "Failure"
+    elif rule_name in ("HIGH_PRESSURE", "HIGH_VIBRATION", "LOW_PRESSURE"):
+        state = "Warning"
+    else:
+        state = "Normal"
+
+    with open(CSV_FILE, "a", newline="") as file:
+        writer = csv.writer(file)
+
+        if not file_exists:
+            writer.writerow([
+                "temperature", "pressure", "vibration",
+                "rpm", "current", "state"
+            ])
+
+        writer.writerow([
+            reading["temperature"],
+            reading["pressure"],
+            reading["vibration"],
+            reading["rpm"],
+            reading["current"],
+            state
+        ])
 # ---------------------------------------------------------------------------
 # STEP 6 — Add a second sensor to the system
 # TODO: add e.g. "current" to generate_sensor_data(), then use it in a rule
@@ -133,8 +163,10 @@ def main():
         print(f"           ACT   -> {outcome}\n")
 
         log_decision(reading, rule_name, action)
+        log_csv(reading, rule_name)
         time.sleep(0.2)
 
 
 if __name__ == "__main__":
     main()
+    
