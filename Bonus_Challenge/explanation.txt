@@ -1,0 +1,22 @@
+Bonus Challenge - Robotic Arm Health Monitoring System
+Explanation
+
+1. Safety Threshold Choices (Immediate-Stop Check)
+- Shoulder Torque (> 140 Nm): The shoulder joint carries the main load of the robot arm. Normal operating torque is around 50-80 Nm. Spikes over 140 Nm indicate an arm collision, heavy mechanical jam, or payload drop risk.
+- Elbow Torque (> 95 Nm): Rated capacity is ~80 Nm. Torque above 95 Nm points to gearbox binding or axis seizure.
+- Wrist Torque (> 45 Nm): Wrist has small, delicate gears (rated ~35 Nm). Loads over 45 Nm can shear gear teeth or damage the tool flange.
+- Temperature (> 85 C): Normal running temperature is 40-55 C. Above 85 C, bearing lubricant breaks down and motor windings overheat.
+- Vibration (> 7.5 mm/s): Follows ISO 10816-3 Zone D (dangerous vibration). Vibration above 7.5 mm/s indicates severe mechanical damage like bearing fracture or loose structural bolts.
+
+2. Decision Fusion (Model + Maintenance Log)
+- Safety check runs first (Priority 0). If any joint exceeds the hard limits above, it triggers EMERGENCY_STOP immediately without waiting for the model.
+- Next, the spoofed-sensor defense checks for fake or replayed signals (Priority 1). If spoofing is hiding dangerous heat or vibration, it triggers EMERGENCY_STOP; otherwise SCHEDULE_MAINTENANCE.
+- If both pass, the ML model prediction and the technician notes are combined (Priority 2):
+  * If Model = Failure OR Log = CRITICAL -> SCHEDULE_MAINTENANCE
+  * If Model = Warning OR Log = WARNING -> MONITOR
+  * If Model = Normal AND Log is normal/empty -> SAFE
+
+3. Spoofed-Sensor Defense
+- How it works: In a mechanical joint, friction and load naturally produce heat and vibration. If a joint reports high vibration (>= 4.5 mm/s) and high temperature (>= 65 C), the torque cannot physically be near zero or nominal. If an attacker injects a low torque value (e.g. 18 Nm on the shoulder) during thermal or vibration distress, the cross-check catches the mismatch.
+- What it catches: Fake nominal torque injected to mask bearing wear or overheating, and flatlined/frozen sensor values.
+- What it would not catch: A coordinated multi-sensor attack where the attacker fakes torque, temperature, and vibration simultaneously according to exact physical equations.

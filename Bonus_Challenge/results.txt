@@ -1,0 +1,14 @@
+=== 1. DATA GENERATION OUTPUT ===
+Generated 90 records in Bonus_Challenge/data.csv
+
+=== 2. MODEL TRAINING OUTPUT ===
+Model trained. Accuracy: 100.0%
+
+=== 3. PIPELINE EXECUTION OUTPUT ===
+Running pipeline checks:
+[Arm-2] (Normal run) -> Decision: SAFE | Reason: Model=Normal, Log=NORMAL
+[Arm-1] (Warning signs) -> Decision: MONITOR | Reason: Model=Warning, Log=WARNING
+[Arm-3] (Severe wear) -> Decision: SCHEDULE_MAINTENANCE | Reason: Model=Failure, Log=CRITICAL
+[Arm-6] (Collision / Jam) -> Decision: EMERGENCY_STOP | Reason: Safety interlock tripped on shoulder: torque 158.0 Nm exceeds limit 140.0 Nm
+[Arm-7] (Spoofed torque attack) -> Decision: EMERGENCY_STOP | Reason: Spoofed sensor masking severe danger on shoulder: low torque (18.0 Nm) reported despite high temp (82.0 C) and vib (7.2 mm/s)
+
