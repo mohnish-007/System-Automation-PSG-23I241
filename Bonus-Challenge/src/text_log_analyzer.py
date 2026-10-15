@@ -1,12 +1,8 @@
-# Requirement 3: Maintenance Notes Analysis
-# Extracts arm health signals from technician logs written in plain English
-
 import os
 import re
 
 LOG_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "maintenance_notes.txt")
 
-# Keywords for classifying note severity
 CRITICAL_WORDS = [
     "urgent", "grinding", "leakage", "leaking", "grease", "backlash",
     "seizure", "hot", "smoke", "failure", "broken", "asap"
@@ -37,7 +33,6 @@ class MaintenanceLogAnalyzer:
         with open(self.log_path, "r", encoding="utf-8") as f:
             content = f.read()
 
-        # Split entries by timestamp: YYYY-MM-DD HH:MM
         raw_blocks = re.split(r"(?=\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2})", content)
         self.entries = []
 
@@ -50,7 +45,6 @@ class MaintenanceLogAnalyzer:
             header = lines[0].strip()
             body = lines[1].strip() if len(lines) > 1 else ""
 
-            # Extract date and technician name from header (e.g. 2026-10-14 09:15 - Elena)
             ts_match = re.search(r"(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2})", header)
             timestamp = ts_match.group(1) if ts_match else "UNKNOWN"
 
@@ -63,17 +57,12 @@ class MaintenanceLogAnalyzer:
             })
 
     def parse_text(self, text):
-        """Analyze a note to extract mentioned arm IDs, joints, and severity level."""
         text_lower = text.lower()
 
-        # Find mentioned arms (e.g. Arm-1, Arm 3)
         arms_found = re.findall(r"\barm[\s\-]?(\d+)\b", text_lower)
         arm_ids = [f"Arm-{num}" for num in arms_found]
-
-        # Find mentioned joints
         joints_found = [j for j in ["shoulder", "elbow", "wrist"] if j in text_lower]
 
-        # Check for negation: e.g. "no oil leak seen", "no strange noise"
         cleaned_text = re.sub(r"\bno\s+[\w\s]{0,15}(leak|leakage|noise|vibration|grease|heat)", "", text_lower)
 
         matched_crit = [w for w in CRITICAL_WORDS if w in cleaned_text]
@@ -108,7 +97,6 @@ class MaintenanceLogAnalyzer:
         }
 
     def get_signal_for_arm(self, arm_id):
-        """Get the latest or highest-risk log entry for a specific arm."""
         matched = [e for e in self.entries if arm_id.lower() in [a.lower() for a in e["arm_ids"]]]
 
         if not matched:

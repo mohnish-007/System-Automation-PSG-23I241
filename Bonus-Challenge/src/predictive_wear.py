@@ -1,13 +1,10 @@
-# Requirement 2: Predictive Wear Detection
-# Trains a machine learning model on historical joint failure data to detect wear before safety trips
-
 import os
 import joblib
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, classification_report
+from sklearn.metrics import accuracy_score
 
 MODEL_FILE = os.path.join(os.path.dirname(__file__), "..", "models", "joint_wear_model.pkl")
 DATA_FILE = os.path.join(os.path.dirname(__file__), "..", "data", "joint_wear_history.csv")
@@ -19,7 +16,6 @@ FEATURE_COLS = [
 ]
 
 def prepare_features(df):
-    """Encode joint type and extract numeric features."""
     feats = pd.DataFrame(index=df.index)
     joint_lower = df["joint"].str.lower()
     feats["joint_shoulder"] = (joint_lower == "shoulder").astype(int)
@@ -49,7 +45,7 @@ def train_model(data_path=DATA_FILE, model_path=MODEL_FILE):
     os.makedirs(os.path.dirname(model_path), exist_ok=True)
     joblib.dump({"model": clf, "features": FEATURE_COLS}, model_path)
 
-    print(f"Model trained successfully. Test Accuracy: {acc * 100:.2f}%")
+    print(f"Model trained. Accuracy: {acc * 100:.2f}%")
     return clf
 
 class JointWearPredictor:
@@ -62,7 +58,6 @@ class JointWearPredictor:
             self.model = artifact["model"]
 
     def predict_joint(self, joint_name, reading):
-        """Predict wear state (Normal / Warning / Failure) for a given joint reading."""
         row = {
             "joint": joint_name.lower(),
             "torque_nm": reading.get("torque_nm", 50.0),
@@ -79,7 +74,6 @@ class JointWearPredictor:
         classes = list(self.model.classes_)
         prob_dict = dict(zip(classes, [float(p) for p in probs]))
 
-        # Calculate a continuous wear score between 0.0 and 1.0
         p_warn = prob_dict.get("Warning", 0.0)
         p_fail = prob_dict.get("Failure", 0.0)
         wear_score = round(p_warn * 0.5 + p_fail * 1.0, 3)
@@ -93,7 +87,6 @@ class JointWearPredictor:
         }
 
     def predict_arm(self, arm_readings):
-        """Aggregate predictions across shoulder, elbow, and wrist joints."""
         results = {}
         worst_score = 0.0
         worst_state = "Normal"

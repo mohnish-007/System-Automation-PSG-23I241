@@ -1,7 +1,3 @@
-# Bonus Challenge - End-to-End Pipeline Demonstration
-# Tests all 4 possible decisions: SAFE, MONITOR, SCHEDULE_MAINTENANCE, EMERGENCY_STOP
-# Also demonstrates the spoofed-sensor defense in action.
-
 import os
 import sys
 
@@ -17,7 +13,6 @@ def run_scenarios():
     monitor = RoboticArmHealthMonitor()
     results = []
 
-    # Scenario 1: Normal operation -> SAFE
     print("\n--- Scenario 1: Arm-2 (Normal Operation) ---")
     readings_safe = {
         "shoulder": {"torque_nm": 62.5, "temperature_c": 46.2, "vibration_mms": 1.35, "operating_hours": 1200, "load_kg": 3.0},
@@ -30,7 +25,6 @@ def run_scenarios():
     print(f"Action:   {r1['action']}")
     results.append(r1['final_decision'])
 
-    # Scenario 2: Warning signs -> MONITOR
     print("\n--- Scenario 2: Arm-1 (Moderate Wear & Tech Note) ---")
     readings_monitor = {
         "shoulder": {"torque_nm": 70.0, "temperature_c": 52.0, "vibration_mms": 1.6, "operating_hours": 4200, "load_kg": 4.5},
@@ -43,7 +37,6 @@ def run_scenarios():
     print(f"Action:   {r2['action']}")
     results.append(r2['final_decision'])
 
-    # Scenario 3: Heavy wear and critical note -> SCHEDULE_MAINTENANCE
     print("\n--- Scenario 3: Arm-3 (Severe Wear & Grinding Noise Logged) ---")
     readings_maint = {
         "shoulder": {"torque_nm": 72.0, "temperature_c": 51.0, "vibration_mms": 1.7, "operating_hours": 7500, "load_kg": 5.0},
@@ -56,7 +49,6 @@ def run_scenarios():
     print(f"Action:   {r3['action']}")
     results.append(r3['final_decision'])
 
-    # Scenario 4: Hardware safety stop -> EMERGENCY_STOP
     print("\n--- Scenario 4: Arm-6 (Torque Spike / Mechanical Jam) ---")
     readings_estop = {
         "shoulder": {"torque_nm": 162.4, "temperature_c": 55.0, "vibration_mms": 2.1, "operating_hours": 3000, "load_kg": 7.0},
@@ -69,14 +61,12 @@ def run_scenarios():
     print(f"Action:   {r4['action']}")
     results.append(r4['final_decision'])
 
-    # Scenario 5: Spoofed sensor attack -> Defense catches it
     print("\n--- Scenario 5: Arm-7 (Spoofed Sensor Attack) ---")
-    print("Attacker feeds fake torque of 18.0 Nm while bearing is at 82.5 C with 7.1 mm/s vibration.")
     readings_spoofed = {
         "shoulder": {
-            "torque_nm": 18.0,      # Fake reading injected by attacker
-            "temperature_c": 82.5,  # Real physical heat
-            "vibration_mms": 7.10,  # Real bearing vibration
+            "torque_nm": 18.0,
+            "temperature_c": 82.5,
+            "vibration_mms": 7.10,
             "operating_hours": 8900,
             "load_kg": 7.5
         },
@@ -90,7 +80,6 @@ def run_scenarios():
 
     print("\n" + "=" * 65)
     print(f"Decisions produced in test run: {set(results)}")
-    print("All 4 target decisions (SAFE, MONITOR, SCHEDULE_MAINTENANCE, EMERGENCY_STOP) verified!")
     print("=" * 65)
 
 main = run_scenarios

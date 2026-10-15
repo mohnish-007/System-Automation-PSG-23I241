@@ -1,7 +1,3 @@
-# Requirement 5: One Final Decision Per Arm
-# Combines Safety Interlock, Spoof Defense, ML Wear Model, and Maintenance Notes
-# Decisions: SAFE, MONITOR, SCHEDULE_MAINTENANCE, EMERGENCY_STOP
-
 from src.safety_interlock import SafetyInterlock
 from src.predictive_wear import JointWearPredictor
 from src.text_log_analyzer import MaintenanceLogAnalyzer
@@ -15,14 +11,6 @@ class RoboticArmHealthMonitor:
         self.spoof_detector = SpoofedSensorDetector()
 
     def evaluate_arm(self, arm_id, arm_readings):
-        """
-        Evaluate full status of a robotic arm and return a single decision.
-        Priority:
-        1. Immediate Safety Stop (deterministic, no ML)
-        2. Spoofed Sensor Defense
-        3. ML Wear Prediction + Maintenance Log Fusion
-        """
-        # Step 1: Immediate Safety Stop Check
         tripped, trip_reason, trip_details = self.safety.evaluate_arm(arm_readings)
         if tripped:
             return {
@@ -37,10 +25,8 @@ class RoboticArmHealthMonitor:
                 "action": "Trigger emergency stop. Inspect machine immediately."
             }
 
-        # Step 2: Check for Sensor Spoofing
         spoof = self.spoof_detector.evaluate_arm(arm_id, arm_readings)
         if spoof["is_spoofed"]:
-            # If spoofing is hiding critical physical danger (very high temp or vib)
             if spoof.get("unmasked_danger"):
                 return {
                     "arm_id": arm_id,
@@ -66,14 +52,12 @@ class RoboticArmHealthMonitor:
                     "action": "Schedule technician to inspect sensor wiring and calibration."
                 }
 
-        # Step 3: Run ML Wear Model & Maintenance Log Analysis
         ml_res = self.wear_model.predict_arm(arm_readings)
         log_res = self.log_analyzer.get_signal_for_arm(arm_id)
 
-        ml_state = ml_res["aggregate_state"]  # Normal, Warning, Failure
-        log_level = log_res["risk_level"]     # CRITICAL, WARNING, NORMAL, NONE
+        ml_state = ml_res["aggregate_state"]
+        log_level = log_res["risk_level"]
 
-        # Step 4: Decision Fusion Matrix
         if ml_state == "Failure" or log_level == "CRITICAL":
             decision = "SCHEDULE_MAINTENANCE"
             reasons = []
