@@ -1,27 +1,13 @@
-"""
-End-to-End Pipeline Runner: Robotic Arm Joint Health Monitoring System
-Course: 23IF02 System Automation — Bonus Challenge
-
-Demonstrates all 5 challenge requirements and proves that all 4 final decisions
-(SAFE, MONITOR, SCHEDULE_MAINTENANCE, EMERGENCY_STOP) are fully reachable.
-Also demonstrates detection of a spoofed sensor attack.
-"""
-
 import sys
 import os
 import json
-
-# Ensure project root is in sys.path
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
-
 from src.health_monitor import RoboticArmHealthMonitor
-
 def print_separator(title="", width=80):
     if title:
         print(f"\n{'='*15} {title.upper()} {'='*(width - 17 - len(title))}")
     else:
         print("=" * width)
-
 def format_decision_banner(decision: str) -> str:
     colors = {
         "SAFE": "\033[92m[ SAFE ]\033[0m",
@@ -36,10 +22,6 @@ def main():
     print("Initializing Robotic Arm Joint Health Monitoring System...")
     monitor = RoboticArmHealthMonitor()
     print("Safety Interlock, Predictive ML Model, NLP Analyzer & Spoof Defense Loaded Successfully.\n")
-
-    # =========================================================================
-    # SCENARIO 1: Expected Outcome -> SAFE
-    # =========================================================================
     print_separator("Scenario 1: Normal Nominal Assembly Operation")
     arm_2_readings = {
         "shoulder": {"torque_nm": 62.5, "temperature_c": 46.2, "vibration_mms": 1.35, "operating_hours": 1200, "load_kg": 3.0},
@@ -52,10 +34,6 @@ def main():
     print(f"FINAL DECISION: {format_decision_banner(result_1['final_decision'])}")
     print(f"Rationale:      {result_1['summary']}")
     print(f"Action:         {result_1['action_required']}")
-
-    # =========================================================================
-    # SCENARIO 2: Expected Outcome -> MONITOR
-    # =========================================================================
     print_separator("Scenario 2: Early Warning Signs & Technician Note")
     arm_1_readings = {
         "shoulder": {"torque_nm": 70.0, "temperature_c": 52.0, "vibration_mms": 1.6, "operating_hours": 4200, "load_kg": 4.5},
@@ -69,10 +47,6 @@ def main():
     print(f"FINAL DECISION: {format_decision_banner(result_2['final_decision'])}")
     print(f"Rationale:      {result_2['summary']}")
     print(f"Action:         {result_2['action_required']}")
-
-    # =========================================================================
-    # SCENARIO 3: Expected Outcome -> SCHEDULE_MAINTENANCE
-    # =========================================================================
     print_separator("Scenario 3: Severe Predictive Wear & Critical Technician Note")
     arm_3_readings = {
         "shoulder": {"torque_nm": 72.0, "temperature_c": 51.0, "vibration_mms": 1.7, "operating_hours": 7500, "load_kg": 5.0},
@@ -86,10 +60,6 @@ def main():
     print(f"FINAL DECISION: {format_decision_banner(result_3['final_decision'])}")
     print(f"Rationale:      {result_3['summary']}")
     print(f"Action:         {result_3['action_required']}")
-
-    # =========================================================================
-    # SCENARIO 4: Expected Outcome -> EMERGENCY_STOP (Deterministic Safety Interlock)
-    # =========================================================================
     print_separator("Scenario 4: Deterministic Hard Safety Threshold Violation")
     arm_critical_readings = {
         "shoulder": {"torque_nm": 162.4, "temperature_c": 55.0, "vibration_mms": 2.1, "operating_hours": 3000, "load_kg": 7.0},
@@ -103,10 +73,6 @@ def main():
     print(f"Trigger:        {result_4['trigger']}")
     print(f"Rationale:      {result_4['summary']}")
     print(f"Action:         {result_4['action_required']}")
-
-    # =========================================================================
-    # SCENARIO 5: Spoofed-Sensor Attack Detected & Defended
-    # =========================================================================
     print_separator("Scenario 5: Spoofed-Sensor Cyber Attack Defended")
     print("Attack Vector: An attacker tampers with the edge telemetry, falsifying shoulder torque to 18.0 Nm")
     print("              to pretend the joint is running cool & free, while physical friction has driven")
@@ -114,9 +80,9 @@ def main():
     
     spoofed_readings = {
         "shoulder": {
-            "torque_nm": 18.0,       # FAKE NOMINAL VALUE INJECTED BY ATTACKER
-            "temperature_c": 82.5,   # REAL PHYSICAL HEAT (Near thermal threshold)
-            "vibration_mms": 7.10,   # REAL CHATTER VIBRATION
+            "torque_nm": 18.0,      
+            "temperature_c": 82.5,   
+            "vibration_mms": 7.10,   
             "operating_hours": 8900,
             "load_kg": 7.5
         },
@@ -130,7 +96,6 @@ def main():
     print(f"Trigger:        {result_5['trigger']}")
     print(f"Spoof Defense:  {result_5['spoof_defense']['alert']}")
     print(f"Action:         {result_5['action_required']}")
-
     print_separator("SUMMARY OF RESULTS")
     all_decisions = [result_1['final_decision'], result_2['final_decision'], result_3['final_decision'], result_4['final_decision']]
     print(f"Reachable Decisions Verified: {set(all_decisions)}")
@@ -139,6 +104,5 @@ def main():
     assert "SCHEDULE_MAINTENANCE" in all_decisions, "SCHEDULE_MAINTENANCE outcome was not reached!"
     assert "EMERGENCY_STOP" in all_decisions, "EMERGENCY_STOP outcome was not reached!"
     print("All 4 target decisions successfully demonstrated and validated!\n")
-
 if __name__ == "__main__":
     main()
