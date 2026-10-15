@@ -1,204 +1,132 @@
-"""
-Requirement 4: Spoofed-Sensor Defense Engine
-Course: 23IF02 System Automation — Bonus Challenge
+# Requirement 4: Spoofed Sensor Defense
+# Defends against spoofed torque readings that try to hide physical joint issues
 
-Defends against sensor spoofing attacks where an adversary or compromised edge device
-injects forged, artificially suppressed, or frozen joint-torque readings to disguise
-underlying physical damage or dangerous operational conditions.
-"""
-
-from typing import Dict, List, Any, Tuple, Optional
 import numpy as np
 
 class SpoofedSensorDetector:
-    """
-    Physics-informed and statistical cross-sensor spoofing detector.
-    
-    Verifies that reported torque is physically consistent with:
-    1. Cross-sensor electro-mechanical dissipation (Temperature & Vibration vs Torque)
-    2. Minimum static gravitational load requirement (Payload vs Shoulder/Elbow Torque)
-    3. Natural ADC sensor micro-noise (Temporal variance / Frozen sensor detection)
-    """
-
-    def __init__(self, variance_threshold: float = 0.005):
+    def __init__(self, variance_threshold=0.005):
         self.variance_threshold = variance_threshold
-        # Rolling history per arm and joint to detect frozen/replay spoofing
-        self.history_buffer: Dict[str, List[float]] = {}
+        # Keep track of recent torque readings to detect frozen signals
+        self.history = {}
 
-    def _get_buffer_key(self, arm_id: str, joint: str) -> str:
+    def _get_key(self, arm_id, joint):
         return f"{arm_id.lower()}_{joint.lower()}"
 
-    def update_history(self, arm_id: str, joint: str, torque: float, window_size: int = 5):
-        """Record torque sample in rolling temporal buffer."""
-        key = self._get_buffer_key(arm_id, joint)
-        if key not in self.history_buffer:
-            self.history_buffer[key] = []
-        self.history_buffer[key].append(torque)
-        if len(self.history_buffer[key]) > window_size:
-            self.history_buffer[key].pop(0)
+    def update_history(self, arm_id, joint, torque):
+        key = self._get_key(arm_id, joint)
+        if key not in self.history:
+            self.history[key] = []
+        self.history[key].append(torque)
+        if len(self.history[key]) > 5:
+            self.history[key].pop(0)
 
-    def check_frozen_sensor(self, arm_id: str, joint: str) -> Tuple[bool, Optional[str]]:
-        """
-        Detect zero-variance / frozen signal attacks where an attacker streams
-        an identical synthetic float to appear steady.
-        """
-        key = self._get_buffer_key(arm_id, joint)
-        buffer = self.history_buffer.get(key, [])
-        if len(buffer) >= 4:
-            variance = float(np.var(buffer))
-            if variance < self.variance_threshold:
-                return True, (
-                    f"FROZEN_SIGNAL_ATTACK: {joint.upper()} torque variance is {variance:.6f} "
-                    f"(below physical ADC noise threshold {self.variance_threshold}). "
-                    f"Sensor signal appears artificially clamped or replayed."
-                )
+    def check_frozen(self, arm_id, joint):
+        """Check if sensor readings are completely frozen (zero variance)."""
+        key = self._get_key(arm_id, joint)
+        readings = self.history.get(key, [])
+        if len(readings) >= 4:
+            var = float(np.var(readings))
+            if var < self.variance_threshold:
+                return True, f"FROZEN_SIGNAL: {joint.upper()} torque reading is identical across multiple samples (var={var:.5f}). Likely replay or frozen sensor."
         return False, None
 
-    def check_physical_cross_correlation(
-        self,
-        joint: str,
-        torque: float,
-        temperature: float,
-        vibration: float
-    ) -> Tuple[bool, Optional[str], Optional[str]]:
+    def check_physics_correlation(self, joint, torque, temp, vib):
         """
-        Physics Check 1: Electro-mechanical energy dissipation coupling.
-        
-        Severe mechanical friction or bearing failure generates elevated heat and vibration.
-        If vibration > 4.5 mm/s AND temperature > 65°C, but reported torque is unrealistically
-        low or nominal, the torque reading is physically impossible and spoofed.
+        Check if reported torque is consistent with temperature and vibration.
+        If joint is overheating or vibrating heavily from friction, torque cannot be unrealistically low.
         """
         joint_key = joint.lower()
+        min_expected_torque = {
+            "shoulder": 50.0,
+            "elbow": 35.0,
+            "wrist": 15.0
+        }.get(joint_key, 30.0)
 
-        # Expected minimum friction torque under severe vibrational/thermal stress
-        stress_torque_floors = {
-            "shoulder": 50.0,  # Nm
-            "elbow": 35.0,     # Nm
-            "wrist": 15.0      # Nm
-        }
-        floor = stress_torque_floors.get(joint_key, 30.0)
-
-        # High vibration and high temperature with suppressed torque reading
-        if vibration >= 4.5 and temperature >= 65.0 and torque < floor:
-            return True, "CROSS_CORRELATION_VIOLATION", (
-                f"SPOOF_ATTACK_DETECTED: {joint.upper()} reports elevated vibration ({vibration:.2f} mm/s) "
-                f"and thermal distress ({temperature:.1f} °C), but reported torque is suspiciously low "
-                f"({torque:.1f} Nm < expected minimum {floor:.1f} Nm under active distress). "
-                f"Torque sensor is likely spoofed to mask hardware fault!"
-            )
-
-        # Severe thermal runaway with baseline torque
-        if temperature >= 75.0 and torque < (floor * 0.75):
-            return True, "THERMAL_DISSIPATION_MISMATCH", (
-                f"SPOOF_ATTACK_DETECTED: {joint.upper()} exhibits extreme thermal dissipation ({temperature:.1f} °C) "
-                f"with negligible torque ({torque:.1f} Nm). Violates thermodynamic conservation of energy."
-            )
-
-        return False, None, None
-
-    def check_gravitational_payload_consistency(
-        self,
-        joint: str,
-        torque: float,
-        load_kg: float
-    ) -> Tuple[bool, Optional[str]]:
-        """
-        Physics Check 2: Gravitational moment consistency.
-        
-        A robot arm holding a 6+ kg tool cannot experience near-zero torque on its shoulder/elbow.
-        """
-        joint_key = joint.lower()
-        if joint_key == "shoulder" and load_kg >= 6.0 and torque < 25.0:
+        # High vibration and high temperature, but torque reported as very low
+        if vib >= 4.5 and temp >= 65.0 and torque < min_expected_torque:
             return True, (
-                f"PAYLOAD_PHYSICS_VIOLATION: Shoulder reported torque ({torque:.1f} Nm) is "
-                f"insufficient to support active {load_kg:.1f} kg payload. Signal appears artificially suppressed."
+                f"SPOOF_DETECTED: {joint.upper()} has high vibration ({vib:.2f} mm/s) "
+                f"and elevated temp ({temp:.1f} C), but reported torque is only {torque:.1f} Nm. "
+                f"Fake low torque reading detected."
             )
-        if joint_key == "elbow" and load_kg >= 6.0 and torque < 15.0:
+
+        # Extreme temperature with almost zero torque
+        if temp >= 75.0 and torque < (min_expected_torque * 0.75):
             return True, (
-                f"PAYLOAD_PHYSICS_VIOLATION: Elbow reported torque ({torque:.1f} Nm) is "
-                f"insufficient to support active {load_kg:.1f} kg payload."
+                f"SPOOF_DETECTED: {joint.upper()} temperature is high ({temp:.1f} C) "
+                f"with unrealistically low torque ({torque:.1f} Nm)."
             )
+
         return False, None
 
-    def evaluate_reading(
-        self,
-        arm_id: str,
-        joint: str,
-        reading: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        """
-        Run full spoof detection pipeline on a single joint reading.
-        """
+    def check_payload_logic(self, joint, torque, load_kg):
+        """Check if shoulder torque is reasonable for the given payload."""
+        if joint.lower() == "shoulder" and load_kg >= 6.0 and torque < 25.0:
+            return True, f"PAYLOAD_MISMATCH: Shoulder torque ({torque:.1f} Nm) is too low for a {load_kg:.1f} kg payload."
+        return False, None
+
+    def evaluate_reading(self, arm_id, joint, reading):
         torque = float(reading.get("torque_nm", 0.0))
         temp = float(reading.get("temperature_c", 25.0))
         vib = float(reading.get("vibration_mms", 1.0))
         load_kg = float(reading.get("load_kg", 0.0))
 
-        # Update history buffer
         self.update_history(arm_id, joint, torque)
 
-        # 1. Physics cross-sensor check
-        is_cross_spoof, anomaly_type, cross_msg = self.check_physical_cross_correlation(joint, torque, temp, vib)
-        if is_cross_spoof:
+        # 1. Physics correlation check
+        is_spoofed, msg = self.check_physics_correlation(joint, torque, temp, vib)
+        if is_spoofed:
             return {
                 "is_spoofed": True,
-                "confidence": 0.95,
-                "attack_type": anomaly_type,
-                "message": cross_msg,
+                "attack_type": "CROSS_CORRELATION_VIOLATION",
+                "message": msg,
                 "unmasked_danger": temp > 80.0 or vib > 7.0
             }
 
-        # 2. Gravitational payload consistency
-        is_load_spoof, load_msg = self.check_gravitational_payload_consistency(joint, torque, load_kg)
-        if is_load_spoof:
+        # 2. Payload check
+        is_load_spoofed, load_msg = self.check_payload_logic(joint, torque, load_kg)
+        if is_load_spoofed:
             return {
                 "is_spoofed": True,
-                "confidence": 0.90,
-                "attack_type": "GRAVITATIONAL_LOAD_MISMATCH",
+                "attack_type": "PAYLOAD_MISMATCH",
                 "message": load_msg,
                 "unmasked_danger": False
             }
 
-        # 3. Temporal frozen sensor check
-        is_frozen, frozen_msg = self.check_frozen_sensor(arm_id, joint)
+        # 3. Frozen reading check
+        is_frozen, frozen_msg = self.check_frozen(arm_id, joint)
         if is_frozen:
             return {
                 "is_spoofed": True,
-                "confidence": 0.88,
-                "attack_type": "FROZEN_REPLAY_ATTACK",
+                "attack_type": "FROZEN_SIGNAL",
                 "message": frozen_msg,
                 "unmasked_danger": False
             }
 
         return {
             "is_spoofed": False,
-            "confidence": 0.0,
             "attack_type": "NONE",
-            "message": "Sensor telemetry is physically consistent and verified.",
+            "message": "Readings look normal and consistent.",
             "unmasked_danger": False
         }
 
-    def evaluate_arm(self, arm_id: str, arm_readings: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
-        """Evaluate all joints for an arm and report any detected spoofing attack."""
+    def evaluate_arm(self, arm_id, arm_readings):
+        """Check all joints for signs of sensor spoofing."""
         spoofed_joints = []
-        highest_confidence = 0.0
-        primary_alert = None
-        has_unmasked_danger = False
+        alert_msg = None
+        has_danger = False
 
         for joint, reading in arm_readings.items():
             res = self.evaluate_reading(arm_id, joint, reading)
             if res["is_spoofed"]:
                 spoofed_joints.append(joint)
-                if res["confidence"] > highest_confidence:
-                    highest_confidence = res["confidence"]
-                    primary_alert = res["message"]
-                if res.get("unmasked_danger", False):
-                    has_unmasked_danger = True
+                alert_msg = res["message"]
+                if res.get("unmasked_danger"):
+                    has_danger = True
 
         return {
             "is_spoofed": len(spoofed_joints) > 0,
             "spoofed_joints": spoofed_joints,
-            "confidence": highest_confidence,
-            "alert": primary_alert or "No spoofing detected.",
-            "unmasked_danger": has_unmasked_danger
+            "alert": alert_msg or "No spoofing detected.",
+            "unmasked_danger": has_danger
         }

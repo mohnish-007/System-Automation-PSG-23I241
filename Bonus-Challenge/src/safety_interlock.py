@@ -1,100 +1,74 @@
-"""
-Requirement 1: Immediate Safety Stop Interlock
-Course: 23IF02 System Automation — Bonus Challenge
+# Requirement 1: Immediate Safety Stop
+# Deterministic rule check for hard physical safety limits (no ML involved)
 
-Deterministic, zero-latency safety engine that evaluates raw sensor readings
-independently of any ML model. If any single joint crosses an unambiguous danger
-threshold, an immediate EMERGENCY_STOP is triggered.
-"""
-
-from typing import Dict, Any, Tuple, Optional
-
-# Safety Thresholds based on industrial robotics standards (ISO 10816-3 & joint mechanical ratings)
-# Shoulder carries primary mechanical moment; elbow bears intermediate articulation; wrist has delicate gearing.
-SAFETY_LIMITS = {
+# Threshold limits based on joint specs and safety standards
+DEFAULT_LIMITS = {
     "torque": {
-        "shoulder": 140.0,  # Nm (rated nominal ~65-110 Nm; >140 Nm indicates severe jam/collision)
-        "elbow": 95.0,      # Nm (rated nominal ~42-75 Nm; >95 Nm indicates binding/gearbox seizure)
-        "wrist": 45.0,      # Nm (rated nominal ~18-32 Nm; >45 Nm indicates tool collision or shear risk)
+        "shoulder": 140.0,  # Nm (rated ~120 Nm; >140 indicates collision or severe jam)
+        "elbow": 95.0,      # Nm (rated ~80 Nm; >95 indicates mechanical binding)
+        "wrist": 45.0,      # Nm (rated ~35 Nm; >45 indicates gear shear / crash)
     },
-    "temperature": 85.0,    # °C across all joints (lubricant breakdown & neodymium magnet demag risk)
-    "vibration": 7.5,       # mm/s RMS (ISO 10816-3 Zone D: dangerous vibration, bearing fracture hazard)
+    "temperature": 85.0,    # deg C (grease degradation and motor overheat limit)
+    "vibration": 7.5        # mm/s (ISO 10816-3 Zone D dangerous vibration)
 }
 
 class SafetyInterlock:
-    """
-    Hardware-level safety interlock emulator.
-    Must never rely on ML predictions or network inference.
-    """
+    def __init__(self, limits=None):
+        self.limits = limits or DEFAULT_LIMITS
 
-    def __init__(self, limits: Optional[Dict[str, Any]] = None):
-        self.limits = limits or SAFETY_LIMITS
-
-    def evaluate_joint(self, joint_name: str, reading: Dict[str, float]) -> Tuple[bool, Optional[str], Optional[Dict[str, Any]]]:
-        """
-        Evaluate a single joint's raw sensor readings against hard physical limits.
-        
-        Args:
-            joint_name: 'shoulder', 'elbow', or 'wrist'
-            reading: dict containing 'torque_nm', 'temperature_c', 'vibration_mms'
-            
-        Returns:
-            (is_tripped, violation_reason, detail_dict)
-        """
-        joint_key = joint_name.lower()
+    def evaluate_joint(self, joint_name, reading):
+        """Check a single joint's sensor readings against hard safety limits."""
+        joint = joint_name.lower()
         torque = reading.get("torque_nm", 0.0)
         temp = reading.get("temperature_c", 0.0)
         vib = reading.get("vibration_mms", 0.0)
 
-        # 1. Torque threshold check (joint-specific mechanical rating)
-        max_torque = self.limits["torque"].get(joint_key, 100.0)
+        # 1. Torque check
+        max_torque = self.limits["torque"].get(joint, 100.0)
         if torque > max_torque:
+            reason = f"CRITICAL: {joint.upper()} torque {torque:.1f} Nm exceeds safety limit of {max_torque:.1f} Nm"
             details = {
                 "rule": "TORQUE_LIMIT_EXCEEDED",
-                "joint": joint_key,
+                "joint": joint,
                 "metric": "torque_nm",
                 "value": torque,
                 "limit": max_torque,
                 "action": "EMERGENCY_STOP"
             }
-            reason = f"CRITICAL: {joint_key.upper()} torque {torque:.1f} Nm exceeds hard safety limit of {max_torque:.1f} Nm"
             return True, reason, details
 
-        # 2. Temperature threshold check (insulation/lubrication limit)
+        # 2. Temperature check
         max_temp = self.limits["temperature"]
         if temp > max_temp:
+            reason = f"CRITICAL: {joint.upper()} temperature {temp:.1f} C exceeds safety limit of {max_temp:.1f} C"
             details = {
-                "rule": "CRITICAL_TEMPERATURE_EXCEEDED",
-                "joint": joint_key,
+                "rule": "TEMPERATURE_LIMIT_EXCEEDED",
+                "joint": joint,
                 "metric": "temperature_c",
                 "value": temp,
                 "limit": max_temp,
                 "action": "EMERGENCY_STOP"
             }
-            reason = f"CRITICAL: {joint_key.upper()} temperature {temp:.1f} °C exceeds thermal ceiling of {max_temp:.1f} °C"
             return True, reason, details
 
-        # 3. Vibration threshold check (ISO 10816-3 Zone D)
+        # 3. Vibration check
         max_vib = self.limits["vibration"]
         if vib > max_vib:
+            reason = f"CRITICAL: {joint.upper()} vibration {vib:.2f} mm/s exceeds structural limit of {max_vib:.2f} mm/s"
             details = {
-                "rule": "DANGEROUS_VIBRATION_EXCEEDED",
-                "joint": joint_key,
+                "rule": "VIBRATION_LIMIT_EXCEEDED",
+                "joint": joint,
                 "metric": "vibration_mms",
                 "value": vib,
                 "limit": max_vib,
                 "action": "EMERGENCY_STOP"
             }
-            reason = f"CRITICAL: {joint_key.upper()} vibration {vib:.2f} mm/s exceeds structural limit of {max_vib:.2f} mm/s"
             return True, reason, details
 
         return False, None, None
 
-    def evaluate_arm(self, arm_readings: Dict[str, Dict[str, float]]) -> Tuple[bool, Optional[str], Optional[Dict[str, Any]]]:
-        """
-        Check all monitored joints of an arm ('shoulder', 'elbow', 'wrist').
-        Returns immediate trip if ANY single joint reading crosses dangerous limits.
-        """
+    def evaluate_arm(self, arm_readings):
+        """Check all joints for an arm. If any joint violates a limit, trigger EMERGENCY_STOP."""
         for joint, reading in arm_readings.items():
             tripped, reason, details = self.evaluate_joint(joint, reading)
             if tripped:

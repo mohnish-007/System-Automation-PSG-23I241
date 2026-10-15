@@ -1,18 +1,16 @@
-# 23IF02 System Automation — Course Submissions
+# System-Automation-PSG-23I241
 
-**Student / GitHub:** [mohnish-007](https://github.com/mohnish-007)  
-**Institution:** PSG College of Technology  
+Coursework submissions for 23IF02 System Automation.
 
----
+## Repository Contents
 
-## Repository Structure
-
-- [`Day-01/`](Day-01/): Hands-on exercises for Rule Engines, Priority Ordering, and Machine State Evaluation.
-- [`Day-02/`](Day-02/): Machine Learning for Predictive Maintenance, Sensor History Data Generation, and Model Training.
-- [`Bonus-Challenge/`](Bonus-Challenge/): **Robotic Arm Joint Health Monitoring System**
-  - **Requirement 1:** Immediate deterministic safety-stop interlock (zero-latency, no ML dependency).
-  - **Requirement 2:** Predictive wear detection model trained on historical joint failure data.
-  - **Requirement 3:** Free-text technician maintenance log scanner with negation handling.
-  - **Requirement 4:** Physics-informed and cross-sensor spoofed-torque defense.
-  - **Requirement 5:** Multi-signal fusion engine producing `SAFE`, `MONITOR`, `SCHEDULE_MAINTENANCE`, or `EMERGENCY_STOP`.
-  - See [`Bonus-Challenge/README.md`](Bonus-Challenge/README.md) for full documentation, engineering rationale, and test instructions.
+- **`Day-01/`**: Rule engine implementation with priority-based decision logic.
+- **`Day-02/`**: Synthetic sensor data generation and machine learning model for predictive maintenance.
+- **`Bonus-Challenge/`**: Robotic Arm Joint Health Monitoring System
+  - Monitors joint torque, temperature, and vibration across shoulder, elbow, and wrist joints.
+  - Implements deterministic immediate safety stop (Requirement 1).
+  - Trains ML wear prediction model on historical joint failure data (Requirement 2).
+  - Parses unstructured technician logs into arm risk signals (Requirement 3).
+  - Defends against spoofed torque readings using physical cross-checks (Requirement 4).
+  - Fuses signals into one final decision per arm: `SAFE`, `MONITOR`, `SCHEDULE_MAINTENANCE`, `EMERGENCY_STOP` (Requirement 5).
+  - Documentation and written report in [`Bonus-Challenge/README.md`](Bonus-Challenge/README.md).

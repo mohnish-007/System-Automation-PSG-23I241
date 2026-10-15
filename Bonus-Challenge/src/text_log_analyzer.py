@@ -1,157 +1,128 @@
-"""
-Requirement 3: Unstructured Maintenance Notes Analyzer
-Course: 23IF02 System Automation — Bonus Challenge
-
-Parses free-text technician logs, filtering out irrelevant facility notes,
-and extracting an independent semantic risk signal per robotic arm and joint.
-"""
+# Requirement 3: Maintenance Notes Analysis
+# Extracts arm health signals from technician logs written in plain English
 
 import os
 import re
-from typing import Dict, List, Any, Optional
 
-DEFAULT_LOG_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "maintenance_notes.txt")
+LOG_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "maintenance_notes.txt")
 
-# Lexicons for severity extraction
-CRITICAL_KEYWORDS = [
-    "urgent", "grinding", "leakage", "grease", "backlash", "seizure",
-    "excessively hot", "smoke", "stripped", "failure", "severe", "galling"
+# Keywords for classifying note severity
+CRITICAL_WORDS = [
+    "urgent", "grinding", "leakage", "leaking", "grease", "backlash",
+    "seizure", "hot", "smoke", "failure", "broken", "asap"
 ]
 
-WARNING_KEYWORDS = [
-    "warm", "clicking", "whining", "chatter", "slight", "heat spot",
-    "monitor", "elevated", "intermittent", "vibrating", "friction", "jerkiness"
+WARNING_WORDS = [
+    "warm", "clicking", "whining", "chatter", "slight", "monitor",
+    "elevated", "intermittent", "noise", "play"
 ]
 
-NORMAL_KEYWORDS = [
-    "routine", "smooth", "clean", "nominal", "within spec", "standard",
-    "operating well", "no anomalous", "tolerance"
+NORMAL_WORDS = [
+    "routine", "smooth", "clean", "normal", "within spec", "fine", "inspected"
 ]
 
 IRRELEVANT_TOPICS = [
-    "lunch", "paper towel", "safety signs", "wiped down", "cable ties",
-    "dust cover", "vacuumed", "handover checklist", "cabinet", "camera lens"
+    "lunch", "safety tape", "warning signs", "cleaning", "conveyor",
+    "hex keys", "toolbox", "dust filters", "cabinet"
 ]
 
 class MaintenanceLogAnalyzer:
-    """Free-text log scanner extracting independent health signals for robotic arms."""
+    def __init__(self, log_path=None):
+        self.log_path = log_path or LOG_PATH
+        self.entries = []
+        if self.log_path and os.path.exists(self.log_path):
+            self.load_entries()
 
-    def __init__(self, log_file_path: Optional[str] = None):
-        self.log_file_path = log_file_path or DEFAULT_LOG_PATH
-        self.entries: List[Dict[str, Any]] = []
-        if os.path.exists(self.log_file_path):
-            self.load_log_file(self.log_file_path)
-
-    def load_log_file(self, path: str):
-        """Parse raw log text into structured entry records."""
-        with open(path, "r", encoding="utf-8") as f:
+    def load_entries(self):
+        with open(self.log_path, "r", encoding="utf-8") as f:
             content = f.read()
 
-        # Split entries by timestamp header [YYYY-MM-DD HH:MM]
-        raw_blocks = re.split(r"(?=\[\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}\])", content)
+        # Split entries by timestamp: YYYY-MM-DD HH:MM
+        raw_blocks = re.split(r"(?=\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2})", content)
         self.entries = []
 
         for block in raw_blocks:
             block = block.strip()
-            if not block or block.startswith("#"):
+            if not block:
                 continue
 
-            header_match = re.match(r"\[([\d\-:\s]+)\]\s+([^\n:]+):?\n?(.*)", block, re.DOTALL)
-            if header_match:
-                timestamp = header_match.group(1).strip()
-                author = header_match.group(2).strip()
-                text = header_match.group(3).strip()
-            else:
-                timestamp = "UNKNOWN"
-                author = "Technician"
-                text = block
+            lines = block.split("\n", 1)
+            header = lines[0].strip()
+            body = lines[1].strip() if len(lines) > 1 else ""
 
-            analysis = self.analyze_text(text)
+            # Extract date and technician name from header (e.g. 2026-10-14 09:15 - Elena)
+            ts_match = re.search(r"(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2})", header)
+            timestamp = ts_match.group(1) if ts_match else "UNKNOWN"
+
+            parsed = self.parse_text(body or header)
             self.entries.append({
                 "timestamp": timestamp,
-                "author": author,
-                "text": text,
-                **analysis
+                "header": header,
+                "text": body or header,
+                **parsed
             })
 
-    def analyze_text(self, text: str) -> Dict[str, Any]:
-        """
-        Analyze a single free-text sentence or paragraph.
-        Identifies mentioned arms, joints, relevance, and risk classification.
-        """
+    def parse_text(self, text):
+        """Analyze a note to extract mentioned arm IDs, joints, and severity level."""
         text_lower = text.lower()
 
-        # Identify mentioned arm IDs (e.g. Arm-1, Arm-2, arm 3)
+        # Find mentioned arms (e.g. Arm-1, Arm 3)
         arms_found = re.findall(r"\barm[\s\-]?(\d+)\b", text_lower)
         arm_ids = [f"Arm-{num}" for num in arms_found]
 
-        # Identify mentioned joints
-        joints_found = []
-        for j in ["shoulder", "elbow", "wrist"]:
-            if j in text_lower:
-                joints_found.append(j)
+        # Find mentioned joints
+        joints_found = [j for j in ["shoulder", "elbow", "wrist"] if j in text_lower]
 
-        # Check for irrelevant facility / housekeeping notes
+        # Check for negation: e.g. "no oil leak seen", "no strange noise"
+        cleaned_text = re.sub(r"\bno\s+[\w\s]{0,15}(leak|leakage|noise|vibration|grease|heat)", "", text_lower)
+
+        matched_crit = [w for w in CRITICAL_WORDS if w in cleaned_text]
+        matched_warn = [w for w in WARNING_WORDS if w in cleaned_text]
+        matched_norm = [w for w in NORMAL_WORDS if w in text_lower]
+
         is_irrelevant = any(irr in text_lower for irr in IRRELEVANT_TOPICS) and not arms_found
 
-        # Filter out negated patterns like "no leakage", "no visible ... leakage", "no abnormal"
-        cleaned_text = re.sub(r"\bno\s+[\w\s]{0,15}(leakage|grease|backlash|grinding|chatter|vibration)", "", text_lower)
-
-        matched_crit = [kw for kw in CRITICAL_KEYWORDS if kw in cleaned_text]
-        matched_warn = [kw for kw in WARNING_KEYWORDS if kw in cleaned_text]
-        matched_norm = [kw for kw in NORMAL_KEYWORDS if kw in text_lower]
-
         if matched_crit:
-            risk_level = "CRITICAL"
-            risk_score = 0.90
-            recommendation = "SCHEDULE_MAINTENANCE"
+            level = "CRITICAL"
+            score = 0.9
         elif matched_warn:
-            risk_level = "WARNING"
-            risk_score = 0.50
-            recommendation = "MONITOR"
+            level = "WARNING"
+            score = 0.5
         elif matched_norm and not matched_warn and not matched_crit:
-            risk_level = "NORMAL"
-            risk_score = 0.05
-            recommendation = "SAFE"
+            level = "NORMAL"
+            score = 0.1
         elif is_irrelevant or not arms_found:
-            risk_level = "NONE"
-            risk_score = 0.0
-            recommendation = "NO_ACTION"
+            level = "NONE"
+            score = 0.0
         else:
-            risk_level = "LOW"
-            risk_score = 0.15
-            recommendation = "SAFE"
+            level = "LOW"
+            score = 0.2
 
         return {
             "arm_ids": arm_ids,
             "joints": joints_found,
-            "risk_level": risk_level,
-            "risk_score": risk_score,
+            "risk_level": level,
+            "risk_score": score,
             "matched_keywords": matched_crit + matched_warn + matched_norm,
-            "is_irrelevant": is_irrelevant,
-            "recommendation": recommendation
+            "is_irrelevant": is_irrelevant
         }
 
-    def get_signal_for_arm(self, arm_id: str) -> Dict[str, Any]:
-        """
-        Retrieve the latest, most pertinent maintenance signal for a specific arm.
-        """
-        relevant_entries = [e for e in self.entries if arm_id.lower() in [a.lower() for a in e.get("arm_ids", [])]]
+    def get_signal_for_arm(self, arm_id):
+        """Get the latest or highest-risk log entry for a specific arm."""
+        matched = [e for e in self.entries if arm_id.lower() in [a.lower() for a in e["arm_ids"]]]
 
-        if not relevant_entries:
+        if not matched:
             return {
                 "arm_id": arm_id,
                 "has_notes": False,
                 "risk_level": "NONE",
                 "risk_score": 0.0,
-                "summary": "No maintenance log entries recorded for this arm.",
-                "matched_keywords": [],
-                "target_joints": []
+                "summary": "No technician notes logged for this arm.",
+                "matched_keywords": []
             }
 
-        # Select most severe entry
-        severity_rank = {"CRITICAL": 3, "WARNING": 2, "LOW": 1, "NORMAL": 0, "NONE": 0}
-        top_entry = max(relevant_entries, key=lambda e: severity_rank.get(e["risk_level"], 0))
+        severity = {"CRITICAL": 3, "WARNING": 2, "LOW": 1, "NORMAL": 0, "NONE": 0}
+        top_entry = max(matched, key=lambda e: severity.get(e["risk_level"], 0))
 
         return {
             "arm_id": arm_id,
@@ -160,14 +131,12 @@ class MaintenanceLogAnalyzer:
             "risk_score": top_entry["risk_score"],
             "summary": top_entry["text"],
             "timestamp": top_entry["timestamp"],
-            "matched_keywords": top_entry["matched_keywords"],
-            "target_joints": top_entry["joints"]
+            "matched_keywords": top_entry["matched_keywords"]
         }
 
 if __name__ == "__main__":
     analyzer = MaintenanceLogAnalyzer()
-    print(f"Loaded {len(analyzer.entries)} log entries.\n")
+    print(f"Loaded {len(analyzer.entries)} entries.")
     for arm in ["Arm-1", "Arm-2", "Arm-3", "Arm-4", "Arm-5"]:
-        sig = analyzer.get_signal_for_arm(arm)
-        print(f"[{arm}] Risk: {sig['risk_level']} (Score: {sig['risk_score']}) | Keywords: {sig['matched_keywords']}")
-        print(f"      Notes: {sig['summary']}\n")
+        res = analyzer.get_signal_for_arm(arm)
+        print(f"[{arm}] Level: {res['risk_level']} | Summary: {res['summary']}")
